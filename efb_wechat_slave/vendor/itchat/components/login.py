@@ -4,12 +4,6 @@ import json, xml.dom.minidom
 import random
 import traceback, logging
 
-try:
-    from httplib import BadStatusLine
-except ImportError:
-    from http.client import BadStatusLine
-
-import requests
 from pyqrcode import QRCode
 
 from .. import config, utils
@@ -281,8 +275,6 @@ def start_receiving(self, exitCallback=None, getReceivingFnOnly=False):
                         for msg in msgList:
                             self.msgList.put(msg)
                 retryCount = 0
-            except requests.exceptions.ReadTimeout:
-                pass
             except:
                 retryCount += 1
                 logger.error(traceback.format_exc())
@@ -316,20 +308,7 @@ def sync_check(self):
         '_': self.loginInfo['logintime'], }
     headers = {'User-Agent': self.user_agent}
     self.loginInfo['logintime'] += 1
-    try:
-        r = self.s.get(url, params=params, headers=headers, timeout=config.TIMEOUT)
-    except requests.exceptions.ConnectionError as e:
-        try:
-            if not isinstance(e.args[0].args[1], BadStatusLine):
-                raise
-            # will return a package with status '0 -'
-            # and value like:
-            # 6f:00:8a:9c:09:74:e4:d8:e0:14:bf:96:3a:56:a0:64:1b:a4:25:5d:12:f4:31:a5:30:f1:c6:48:5f:c3:75:6a:99:93
-            # seems like status of typing, but before I make further achievement code will remain like this
-            return '2'
-        except:
-            raise
-    r.raise_for_status()
+    r = self.s.get(url, params=params, headers=headers)
     regx = r'window.synccheck={retcode:"(\d+)",selector:"(\d+)"}'
     pm = re.search(regx, r.text)
     if pm is None or pm.group(1) != '0':
@@ -349,7 +328,7 @@ def get_msg(self):
     headers = {
         'ContentType': 'application/json; charset=UTF-8',
         'User-Agent': self.user_agent}
-    r = self.s.post(url, data=json.dumps(data), headers=headers, timeout=config.TIMEOUT)
+    r = self.s.post(url, data=json.dumps(data), headers=headers)
     dic = json.loads(r.content.decode('utf-8', 'replace'))
     if dic['BaseResponse']['Ret'] != 0: return None, None
     self.loginInfo['SyncKey'] = dic['SyncKey']

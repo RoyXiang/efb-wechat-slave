@@ -43,6 +43,7 @@ setup(
         "pypng",
         "PyYaml>=5.3",
         "requests>=2.22.0",
+        "retrying",
         "typing_extensions",
         "bullet",
         "cjkwrap"
